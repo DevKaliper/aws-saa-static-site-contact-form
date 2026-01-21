@@ -6,7 +6,7 @@ resolve_s3 = true
 s3_prefix = "sam-app"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "ProjectName=\"sas-static-contact\" NotificationEmail=\"gxlthz@gmail.com\" AllowedCorsOrigin=\"*\""
+parameter_overrides = "ProjectName=\"sas-static-contact\" NotificationEmail=\"\" AllowedCorsOrigin=\"*\""
 image_repositories = []
 
 [default.global.parameters]
