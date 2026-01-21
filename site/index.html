@@ -1,0 +1,224 @@
+<!-- site/index.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Black Harbor Tattoo Studio</title>
+    <meta name="description" content="Black Harbor Tattoo Studio — custom tattoos, clean lines, bold work." />
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", Helvetica;
+        background: #0b0b0f;
+        color: #e9e9ee;
+      }
+      a { color: inherit; }
+      .wrap { max-width: 980px; margin: 0 auto; padding: 28px 18px 64px; }
+      .nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .brand { font-weight: 800; letter-spacing: 0.5px; }
+      .pill {
+        display: inline-flex; gap: 10px; align-items: center;
+        padding: 10px 14px; border: 1px solid #222231; border-radius: 999px;
+        background: rgba(255,255,255,0.02);
+      }
+      .hero { margin-top: 28px; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; }
+      @media (max-width: 860px){ .hero { grid-template-columns: 1fr; } }
+      .card {
+        border: 1px solid #222231;
+        background: rgba(255,255,255,0.02);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      }
+      h1 { font-size: 40px; margin: 10px 0 10px; line-height: 1.1; }
+      p { margin: 0 0 10px; color: #c9c9d6; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 540px){ .grid { grid-template-columns: 1fr; } }
+      label { font-size: 13px; color: #c9c9d6; display:block; margin: 0 0 6px; }
+      input, textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 12px;
+        border-radius: 12px;
+        border: 1px solid #2a2a3c;
+        background: #0f0f16;
+        color: #e9e9ee;
+        outline: none;
+      }
+      textarea { min-height: 120px; resize: vertical; }
+      .row { margin: 10px 0 0; }
+      button {
+        cursor: pointer;
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-weight: 700;
+        background: #e9e9ee;
+        color: #0b0b0f;
+      }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
+      .muted { font-size: 13px; color: #a9a9bb; }
+      .status { margin-top: 10px; font-size: 14px; }
+      .ok { color: #7CFFB2; }
+      .err { color: #FF7C7C; }
+      .gallery { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      @media (max-width: 860px){ .gallery { grid-template-columns: repeat(2, 1fr); } }
+      .ph {
+        aspect-ratio: 1 / 1;
+        border-radius: 14px;
+        border: 1px solid #222231;
+        background:
+          radial-gradient(80% 80% at 20% 20%, rgba(233,233,238,0.08), transparent 60%),
+          radial-gradient(70% 70% at 80% 30%, rgba(233,233,238,0.06), transparent 55%),
+          linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      }
+      .footer { margin-top: 18px; display:flex; flex-wrap:wrap; gap: 10px; justify-content: space-between; }
+      .kpi { display:flex; gap: 10px; flex-wrap:wrap; }
+      .kpi span { padding: 8px 10px; border: 1px solid #222231; border-radius: 12px; background: rgba(255,255,255,0.02); }
+      .small { font-size: 12px; color:#a9a9bb; }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="nav">
+        <div class="pill brand">Black Harbor Tattoo</div>
+        <div class="pill muted">Panama City • Walk-ins + Appointments</div>
+      </div>
+
+      <div class="hero">
+        <div class="card">
+          <div class="pill muted">Custom work • Fine line • Blackwork • Traditional</div>
+          <h1>Clean lines.<br/>Bold pieces.</h1>
+          <p>
+            Black Harbor Tattoo Studio crafts custom tattoos with strict hygiene standards and a calm,
+            professional vibe. Tell us your idea and we’ll reply with availability and pricing guidance.
+          </p>
+
+          <div class="footer">
+            <div class="kpi">
+              <span>Mon–Sat: 11am–8pm</span>
+              <span>Sanitized stations</span>
+              <span>Consultations available</span>
+            </div>
+            <div class="small">Instagram: @blackharbortattoo • WhatsApp: +507 6000-0000</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0 0 8px;">Request an appointment</h2>
+          <p class="muted" style="margin:0 0 14px;">
+            This form sends your message to our team via a serverless AWS API (API Gateway → Lambda → SNS).
+          </p>
+
+          <form id="contactForm">
+            <div class="grid">
+              <div class="row">
+                <label for="name">Name</label>
+                <input id="name" name="name" placeholder="Your name" required />
+              </div>
+              <div class="row">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" placeholder="you@email.com" required />
+              </div>
+            </div>
+
+            <div class="row">
+              <label for="message">Idea / placement / size</label>
+              <textarea id="message" name="message" placeholder="Describe your idea. Include style, placement, size, and any reference notes." required></textarea>
+            </div>
+
+            <div class="row" style="display:flex; gap:10px; align-items:center;">
+              <button id="submitBtn" type="submit">Send</button>
+              <span id="status" class="status muted"></span>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 18px;">
+        <h2 style="margin:0 0 10px;">Recent work (placeholder)</h2>
+        <p class="muted" style="margin:0 0 14px;">
+          Replace these placeholders with real images later. For portfolio purposes, the infrastructure + form flow is the key.
+        </p>
+        <div class="gallery">
+          <div class="ph"></div><div class="ph"></div><div class="ph"></div>
+          <div class="ph"></div><div class="ph"></div><div class="ph"></div>
+        </div>
+      </div>
+    </div>
+
+<script src="./config.js"></script>
+
+    <script>
+      const API_BASE_URL = window.__CONFIG__?.API_BASE_URL;
+
+      const form = document.getElementById("contactForm");
+      const statusEl = document.getElementById("status");
+      const btn = document.getElementById("submitBtn");
+
+      function setStatus(msg, type) {
+        statusEl.textContent = msg;
+        statusEl.classList.remove("ok", "err", "muted");
+        if (type === "ok") statusEl.classList.add("ok");
+        else if (type === "err") statusEl.classList.add("err");
+        else statusEl.classList.add("muted");
+      }
+
+      function validateConfig() {
+        if (!API_BASE_URL || API_BASE_URL.includes("SAM_TEMPLATE")) {
+          setStatus("API not configured. Check site/config.js", "err");
+          return false;
+        }
+        return true;
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!validateConfig()) return;
+
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const message = document.getElementById("message").value.trim();
+
+        if (!name || !email || !message) {
+          setStatus("Please fill in all fields.", "err");
+          return;
+        }
+
+        btn.disabled = true;
+        setStatus("Sending…", "muted");
+
+        try {
+          const res = await fetch(`${API_BASE_URL}/contact`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ name, email, message })
+          });
+
+          const payload = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            setStatus(payload?.error || "Request failed.", "err");
+            return;
+          }
+
+          setStatus("Sent. We’ll get back to you soon.", "ok");
+          form.reset();
+        } catch (err) {
+          setStatus("Network error. Check API / CORS.", "err");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      window.addEventListener("load", () => {
+        if (validateConfig()) {
+          setStatus("Ready.", "muted");
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,23 +1,23 @@
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  Serverless Static Website + Contact Form (S3 + CloudFront + API Gateway HTTP API + Lambda + SNS)
+Description: 'Serverless Static Website + Contact Form (S3 + CloudFront + API Gateway
+  HTTP API + Lambda + SNS)
 
+  '
 Parameters:
   ProjectName:
     Type: String
     Default: saa-static-contact
     Description: Prefix for resource names.
-
   NotificationEmail:
     Type: String
-    Description: Email address to subscribe to the SNS topic (you must confirm the subscription).
-
+    Description: Email address to subscribe to the SNS topic (you must confirm the
+      subscription).
   AllowedCorsOrigin:
     Type: String
-    Default: "*"
-    Description: Allowed CORS origin for the contact API (use your CloudFront domain in production).
-
+    Default: '*'
+    Description: Allowed CORS origin for the contact API (use your CloudFront domain
+      in production).
 Globals:
   Function:
     Runtime: nodejs20.x
@@ -26,16 +26,14 @@ Globals:
     Tracing: Active
     Environment:
       Variables:
-        PROJECT_NAME: !Ref ProjectName
-
+        PROJECT_NAME:
+          Ref: ProjectName
 Resources:
-  # -----------------------------
-  # Static Website (S3 + CloudFront)
-  # -----------------------------
   WebsiteBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ProjectName}-${AWS::AccountId}-${AWS::Region}-site"
+      BucketName:
+        Fn::Sub: ${ProjectName}-${AWS::AccountId}-${AWS::Region}-site
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: index.html
@@ -44,88 +42,93 @@ Resources:
         IgnorePublicAcls: false
         BlockPublicPolicy: false
         RestrictPublicBuckets: false
-
   WebsiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref WebsiteBucket
+      Bucket:
+        Ref: WebsiteBucket
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: '2012-10-17'
         Statement:
-          - Sid: PublicReadGetObject
-            Effect: Allow
-            Principal: "*"
-            Action: s3:GetObject
-            Resource: !Sub "${WebsiteBucket.Arn}/*"
-  # -----------------------------
-  # Notifications (SNS)
-  # -----------------------------
+        - Sid: PublicReadGetObject
+          Effect: Allow
+          Principal: '*'
+          Action: s3:GetObject
+          Resource:
+            Fn::Sub: ${WebsiteBucket.Arn}/*
   ContactTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${ProjectName}-contact-topic"
-
+      TopicName:
+        Fn::Sub: ${ProjectName}-contact-topic
   ContactTopicSubscription:
     Type: AWS::SNS::Subscription
     Properties:
       Protocol: email
-      Endpoint: !Ref NotificationEmail
-      TopicArn: !Ref ContactTopic
-
-  # -----------------------------
-  # API (HTTP API) + Lambda
-  # -----------------------------
+      Endpoint:
+        Ref: NotificationEmail
+      TopicArn:
+        Ref: ContactTopic
   ContactApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: prod
       CorsConfiguration:
         AllowOrigins:
-          - !Ref AllowedCorsOrigin
+        - Ref: AllowedCorsOrigin
         AllowHeaders:
-          - content-type
+        - content-type
         AllowMethods:
-          - POST
-          - OPTIONS
+        - POST
+        - OPTIONS
         MaxAge: 600
-
   ContactFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "${ProjectName}-contact-handler"
-      CodeUri: src/
+      FunctionName:
+        Fn::Sub: ${ProjectName}-contact-handler
+      CodeUri: ContactFunction
       Handler: handler.contact
       Environment:
         Variables:
-          TOPIC_ARN: !Ref ContactTopic
+          TOPIC_ARN:
+            Ref: ContactTopic
       Policies:
-        - SNSPublishMessagePolicy:
-            TopicName: !GetAtt ContactTopic.TopicName
+      - SNSPublishMessagePolicy:
+          TopicName:
+            Fn::GetAtt:
+            - ContactTopic
+            - TopicName
       Events:
         ContactRoute:
           Type: HttpApi
           Properties:
-            ApiId: !Ref ContactApi
+            ApiId:
+              Ref: ContactApi
             Path: /contact
             Method: POST
-
+    Metadata:
+      SamResourceId: ContactFunction
 Outputs:
   WebsiteUrl:
     Description: Public S3 website URL (temporary workaround until CloudFront is enabled)
-    Value: !GetAtt WebsiteBucket.WebsiteURL
-    
+    Value:
+      Fn::GetAtt:
+      - WebsiteBucket
+      - WebsiteURL
   WebsiteBucketName:
     Description: S3 bucket for static site assets (private)
-    Value: !Ref WebsiteBucket
-
+    Value:
+      Ref: WebsiteBucket
   ApiEndpoint:
     Description: HTTP API base endpoint
-    Value: !Sub "https://${ContactApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
-
+    Value:
+      Fn::Sub: https://${ContactApi}.execute-api.${AWS::Region}.amazonaws.com/prod
   ContactEndpoint:
     Description: POST endpoint for the contact form
-    Value: !Sub "https://${ContactApi}.execute-api.${AWS::Region}.amazonaws.com/prod/contact"
-
+    Value:
+      Fn::Sub: https://${ContactApi}.execute-api.${AWS::Region}.amazonaws.com/prod/contact
   SnsTopicArn:
     Description: SNS Topic ARN for contact notifications
-    Value: !Ref ContactTopic
+    Value:
+      Ref: ContactTopic

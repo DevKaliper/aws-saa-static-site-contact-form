@@ -11,3 +11,5 @@ The core problems are:
 This project addresses these issues by designing a **serverless, highly available, and cost-efficient architecture on AWS** that delivers a static website with a contact form. The solution leverages managed AWS services to eliminate server management, automatically scale with demand, enforce security best practices (private storage, HTTPS, least-privilege IAM), and follow a pay-per-use cost model.
 
 The result is a real-world, production-oriented reference architecture that demonstrates how to design simple yet robust systems using AWS, aligned with the **AWS Solutions Architect – Associate** principles.
+
+/Users/kaliper/Downloads/aws-sam-cli-macos-arm64.pkg
