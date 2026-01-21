@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Serverless Static Website + Contact Form (S3 + CloudFront + API Gateway HTTP API + Lambda + SNS)
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: saa-static-contact
+    Description: Prefix for resource names.
+
+  NotificationEmail:
+    Type: String
+    Description: Email address to subscribe to the SNS topic (you must confirm the subscription).
+
+  AllowedCorsOrigin:
+    Type: String
+    Default: "*"
+    Description: Allowed CORS origin for the contact API (use your CloudFront domain in production).
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 128
+    Tracing: Active
+    Environment:
+      Variables:
+        PROJECT_NAME: !Ref ProjectName
+
+Resources:
+  # -----------------------------
+  # Static Website (S3 + CloudFront)
+  # -----------------------------
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-${AWS::AccountId}-${AWS::Region}-site"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${ProjectName}-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "${ProjectName} static site"
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_100
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt WebsiteBucket.RegionalDomainName
+            S3OriginConfig: {}
+            OriginAccessControlId: !Ref CloudFrontOAC
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD, OPTIONS]
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontReadOnly
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action:
+              - s3:GetObject
+            Resource: !Sub "${WebsiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+  # -----------------------------
+  # Notifications (SNS)
+  # -----------------------------
+  ContactTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${ProjectName}-contact-topic"
+
+  ContactTopicSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+      TopicArn: !Ref ContactTopic
+
+  # -----------------------------
+  # API (HTTP API) + Lambda
+  # -----------------------------
+  ContactApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedCorsOrigin
+        AllowHeaders:
+          - content-type
+        AllowMethods:
+          - POST
+          - OPTIONS
+        MaxAge: 600
+
+  ContactFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-contact-handler"
+      CodeUri: src/
+      Handler: handler.contact
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref ContactTopic
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt ContactTopic.TopicName
+      Events:
+        ContactRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ContactApi
+            Path: /contact
+            Method: POST
+
+Outputs:
+  CloudFrontUrl:
+    Description: CloudFront distribution domain (static site entrypoint)
+    Value: !Sub "https://${CloudFrontDistribution.DomainName}"
+
+  WebsiteBucketName:
+    Description: S3 bucket for static site assets (private)
+    Value: !Ref WebsiteBucket
+
+  ApiEndpoint:
+    Description: HTTP API base endpoint
+    Value: !Sub "https://${ContactApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+
+  ContactEndpoint:
+    Description: POST endpoint for the contact form
+    Value: !Sub "https://${ContactApi}.execute-api.${AWS::Region}.amazonaws.com/prod/contact"
+
+  SnsTopicArn:
+    Description: SNS Topic ARN for contact notifications
+    Value: !Ref ContactTopic
